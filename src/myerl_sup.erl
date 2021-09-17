@@ -12,19 +12,14 @@ start_link() ->
 
 init([]) ->
     PoolSpecs =
-        poolboy:child_spec(pool,
-                           [{name, {local, pool}},
-                            {worker_module, myerl_worker},
-                            {size, 5},
-                            {max_overflow, 10}],
-                           [{host, "172.17.0.1"},
-                            {user, "root"},
-                            {password, "root"},
-                            {database, "test"},
-                            {port, 3306}]),
+        poolboy:child_spec(myerl_pool,
+                           application:get_all_env(poolboy)
+                           ++ [{name, {local, myerl_pool}}, {worker_module, myerl_worker}],
+                           application:get_all_env(mysql)),
     ElliSpec =
-        #{id => http,
-          start => {elli, start_link, [[{callback, myerl_handler}, {port, 3000}]]},
+        #{id => myerl_http,
+          start =>
+              {elli, start_link, [[{callback, myerl_handler}] ++ application:get_all_env(elli)]},
           restart => permanent,
           shutdown => 5000,
           type => worker,

@@ -7,9 +7,9 @@
 handle(Req, _Args) ->
     handle(elli_request:method(Req), elli_request:path(Req), Req).
 
-handle('GET', [<<"books">>], _Req) ->
-    Worker = poolboy:checkout(pool),
-    {ok, _, Rows} = gen_server:call(Worker, {query, <<"select * from books">>, []}),
+handle('GET', [<<"users">>], _Req) ->
+    Worker = poolboy:checkout(myerl_pool),
+    {ok, _, Rows} = gen_server:call(Worker, {query, <<"select * from users">>, []}),
     poolboy:checkin(pool, Worker),
     {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Rows)};
 handle(_, _, _Req) ->
