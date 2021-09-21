@@ -16,10 +16,15 @@ init([]) ->
                            application:get_all_env(poolboy)
                            ++ [{name, {local, myerl_pool}}, {worker_module, myerl_worker}],
                            application:get_all_env(mysql)),
+    CallbackArgs =
+        [{mods, [{elli_middleware_compress, []}, {myerl_logger, []}, {myerl_handler, []}]}],
     ElliSpec =
         #{id => myerl_http,
           start =>
-              {elli, start_link, [[{callback, myerl_handler}] ++ application:get_all_env(elli)]},
+              {elli,
+               start_link,
+               [[{callback, elli_middleware}, {callback_args, CallbackArgs}]
+                ++ application:get_all_env(elli)]},
           restart => permanent,
           shutdown => 5000,
           type => worker,
@@ -28,5 +33,4 @@ init([]) ->
         #{strategy => one_for_all,
           intensity => 0,
           period => 1},
-    ChildSpecs = [PoolSpecs, ElliSpec],
-    {ok, {SupFlags, ChildSpecs}}.
+    {ok, {SupFlags, [PoolSpecs, ElliSpec]}}.
