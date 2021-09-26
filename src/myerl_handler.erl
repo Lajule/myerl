@@ -36,7 +36,7 @@ handle('GET', [<<"books">>, BookId], _Req) ->
                         {query, <<"select id, title, author from books where id = ?">>, [BookId]}),
     poolboy:checkin(pool, Worker),
     case Rows of
-	[Row] -> {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Row)};
+		[Row] -> {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Row)};
         [] -> {204, <<"No Content">>}
     end;
 handle(_, _, _Req) ->
