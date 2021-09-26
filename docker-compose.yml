@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  restapi:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: book_shop
+      MYSQL_DATABASE: book_shop
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  adminer:
+    image: adminer:4-standalone
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
