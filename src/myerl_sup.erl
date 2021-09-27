@@ -15,7 +15,8 @@ init([]) ->
         poolboy:child_spec(myerl_pool,
                            application:get_all_env(poolboy)
                            ++ [{name, {local, myerl_pool}}, {worker_module, myerl_worker}],
-                           application:get_all_env(mysql)),
+                           application:get_all_env(mysql)
+                           ++ [{password, os:getenv("MYERL_DB_PASSWORD", "")}]),
     CallbackArgs =
         [{mods, [{elli_middleware_compress, []}, {myerl_logger, []}, {myerl_handler, []}]}],
     ElliSpec =

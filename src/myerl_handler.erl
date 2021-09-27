@@ -36,9 +36,16 @@ handle('GET', [<<"books">>, BookId], _Req) ->
                         {query, <<"select id, title, author from books where id = ?">>, [BookId]}),
     poolboy:checkin(pool, Worker),
     case Rows of
-		[Row] -> {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Row)};
-        [] -> {204, <<"No Content">>}
+        [Row] ->
+            {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Row)};
+        [] ->
+            {204, <<"No Content">>}
     end;
+handle('DELETE', [<<"books">>, BookId], _Req) ->
+    Worker = poolboy:checkout(myerl_pool),
+    ok = gen_server:call(Worker, {query, <<"delete from books where id = ?">>, [BookId]}),
+    poolboy:checkin(pool, Worker),
+    {204, <<"No Content">>};
 handle(_, _, _Req) ->
     {404, [], <<"Not Found">>}.
 

@@ -1,10 +1,21 @@
 version: "3"
 
 services:
-  restapi:
-    build: .
+  traefik:
+    image: traefik:v2.5
+    command: --api.insecure=true --providers.docker
     ports:
-      - "3000:3000"
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  myerl:
+    build: .
+    environment:
+      MYERL_DB_PASSWORD: book_shop
+    labels:
+      - "traefik.http.routers.myerl.rule=Host(`myerl.docker.localhost`)"
     depends_on:
       - mysql
 
@@ -15,10 +26,3 @@ services:
       MYSQL_DATABASE: book_shop
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  adminer:
-    image: adminer:4-standalone
-    ports:
-      - "8080:8080"
-    depends_on:
-      - mysql
