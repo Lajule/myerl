@@ -20,19 +20,21 @@ books(Req) ->
     Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
     Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
     Worker = poolboy:checkout(myerl_pool),
-    {ok, ColumnNames, Rows} =
+    {atomic, Result} =
         gen_server:call(Worker,
-                        {query,
-                         <<"select id, title, author from books limit ?, ?">>,
-                         [Offset, Limit]}),
+                        {transaction,
+                         fun(Pid) ->
+                            {ok, _, [[Total]]} =
+                                mysql:query(Pid, <<"select count(*) as total from books">>),
+                            {ok, ColumnNames, Rows} =
+                                mysql:query(Pid,
+                                            <<"select id, title, author from books limit ?, ?">>,
+                                            [Offset, Limit]),
+                            #{total => Total,
+                              list => [to_map(ColumnNames, Row, #{}) || Row <- Rows]}
+                         end}),
     poolboy:checkin(pool, Worker),
-    case Rows of
-        [Row] ->
-	    List = [to_map(ColumnNames, Row, #{}) || Row <- Rows],
-	    {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(List)};
-        [] ->
-            {204, [], <<"No Content">>}
-    end.
+    {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Result)}.
 
 book(BookId, _Req) ->
     Worker = poolboy:checkout(myerl_pool),
