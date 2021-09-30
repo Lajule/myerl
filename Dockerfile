@@ -5,10 +5,11 @@ FROM erlang:alpine
 RUN mkdir /buildroot
 WORKDIR /buildroot
 
-# Copy our Erlang test application
-COPY . /buildroot
+# Copy our Erlang application
+COPY myerl myerl
 
 # And build the release
+WORKDIR myerl
 RUN rebar3 as prod release
 
 # Build stage 1
@@ -20,7 +21,7 @@ RUN apk add --no-cache openssl && \
     apk add --no-cache libstdc++
 
 # Install the released application
-COPY --from=0 /buildroot/_build/prod/rel/myerl /myerl
+COPY --from=0 /buildroot/myerl/_build/prod/rel/myerl /myerl
 
 # Expose relevant ports
 EXPOSE 3000
