@@ -1,7 +1,5 @@
 -module(myerl_books).
 
--include_lib("kernel/include/logger.hrl").
-
 -export([create/1, books/1, book/2, delete/2]).
 
 create(Req) ->

@@ -1,7 +1,5 @@
 -module(myerl_handler).
 
--include_lib("kernel/include/logger.hrl").
-
 -export([handle/2, handle_event/3]).
 
 -behaviour(elli_handler).
