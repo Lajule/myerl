@@ -1,2 +1,2 @@
--name myerl${HOSTNAME}
+-name myerl@${HOSTNAME}
 -setcookie myerl

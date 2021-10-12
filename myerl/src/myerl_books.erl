@@ -3,14 +3,14 @@
 -export([create/1, books/1, book/2, delete/2]).
 
 create(Req) ->
-    Title = elli_request:post_arg_decoded(<<"title">>, Req, <<"undefined">>),
-    Author = elli_request:post_arg_decoded(<<"author">>, Req, <<"undefined">>),
+    Book = jsx:decode(elli_request:body(Req)),
     Worker = poolboy:checkout(myerl_pool),
     ok =
         gen_server:call(Worker,
                         {query,
                          <<"insert into books(title, author) values(?, ?)">>,
-                         [Title, Author]}),
+                         [maps:get(<<"title">>, Book, <<"undefined">>),
+                          maps:get(<<"author">>, Book, <<"undefined">>)]}),
     poolboy:checkin(pool, Worker),
     {201, [], <<"Created">>}.
 
