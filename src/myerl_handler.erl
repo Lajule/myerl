@@ -7,15 +7,8 @@
 handle(Req, _Args) ->
     handle(elli_request:method(Req), elli_request:path(Req), Req).
 
-handle('GET', [], _Req) ->
-    {ok, StatusCode, _RespHeaders, ClientRef} =
-        hackney:request(get,
-                        <<"http://ipinfo.io">>,
-                        [{<<"Accept">>, <<"application/json">>}],
-                        <<>>,
-                        []),
-    {ok, Body} = hackney:body(ClientRef),
-    {StatusCode, [{<<"Content-Type">>, <<"application/json">>}], Body};
+handle('GET', [<<"status">>], Req) ->
+    myerl_status:infos(Req);
 handle('POST', [<<"books">>], Req) ->
     myerl_books:create(Req);
 handle('GET', [<<"books">>], Req) ->
