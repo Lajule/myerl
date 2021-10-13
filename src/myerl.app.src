@@ -1,6 +1,6 @@
 {application,
  myerl,
- [{description, "An OTP application"},
+ [{description, "A MySQL/Erlang REST API skeleton"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {myerl_app, []}},

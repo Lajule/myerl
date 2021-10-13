@@ -1,7 +1,7 @@
 myerl
 =====
 
-An OTP application
+A MySQL/Erlang REST API skeleton.
 
 Build
 -----

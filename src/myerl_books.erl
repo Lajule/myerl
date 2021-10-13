@@ -3,7 +3,9 @@
 -export([create/1, books/1, book/2, delete/2]).
 
 create(Req) ->
-    Book = jsx:decode(elli_request:body(Req)),
+    Book =
+        jsx:decode(
+            elli_request:body(Req)),
     Worker = poolboy:checkout(myerl_pool),
     ok =
         gen_server:call(Worker,
