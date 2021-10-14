@@ -9,6 +9,8 @@ handle(Req, _Args) ->
 
 handle('GET', [<<"status">>], Req) ->
     myerl_status:infos(Req);
+handle('GET', [<<"ping">>], Req) ->
+    myerl_status:ping(Req);
 handle('POST', [<<"books">>], Req) ->
     myerl_books:create(Req);
 handle('GET', [<<"books">>], Req) ->

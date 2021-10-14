@@ -1,10 +1,11 @@
 -module(myerl_status).
 
--export([infos/1]).
+-export([infos/1, ping/1]).
 
 infos(_Req) ->
     Infos =
         #{uptime => element(1, erlang:statistics(wall_clock)),
+	  memory => erlang:memory(),
           run_queue => erlang:statistics(run_queue),
           logical_processors => erlang:system_info(logical_processors),
           logical_processors_online => erlang:system_info(logical_processors_online),
@@ -17,3 +18,6 @@ infos(_Req) ->
           thread_pool_size => erlang:system_info(thread_pool_size),
           process_count => erlang:system_info(process_count)},
     {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Infos)}.
+
+ping(_Req) ->
+    {200, [], <<"pong">>}.
