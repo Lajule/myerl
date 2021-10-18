@@ -18,6 +18,21 @@ Docker image :
 docker build -f docker/Dockerfile -t myerl .
 ```
 
+Run
+---
+
+To run the release :
+
+```sh
+MYERL_DB_PASSWORD=book_shop ./_build/prod/rel/myerl/bin/myerl foreground
+```
+
+Docker image :
+
+```sh
+MYERL_DB_PASSWORD=book_shop docker rm -d --rm myerl
+```
+
 Docker Compose
 --------------
 
