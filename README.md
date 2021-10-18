@@ -6,11 +6,23 @@ A MySQL/Erlang REST API skeleton.
 Build
 -----
 
-    $ rebar3 compile
+To build a release use `rebar3` :
+
+```sh
+rebar3 as prod release
+```
+
+Docker image :
+
+```sh
+docker build -f docker/Dockerfile -t myerl .
+```
 
 Docker Compose
 --------------
 
-    $ docker-compose up -d traefik mysql
-    $ docker-compose up -d --build --scale myerl=2
-    $ curl -H Host:myerl.docker.localhost http://127.0.0.1/books
+```sh
+docker-compose up -d traefik mysql
+docker-compose up -d --build --scale myerl=2
+curl -H Host:myerl.docker.localhost http://127.0.0.1/books
+```
