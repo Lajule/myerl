@@ -37,7 +37,9 @@ Docker Compose
 --------------
 
 ```sh
-docker-compose up -d traefik mysql
-docker-compose up -d --build --scale myerl=2
+docker-compose up -d --scale myerl=2
+```
+
+```sh
 curl -H Host:myerl.docker.localhost http://127.0.0.1/books
 ```

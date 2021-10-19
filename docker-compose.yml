@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  traefik:
+  reverse-proxy:
     image: traefik:v2.5
     command: --api.insecure=true --providers.docker
     ports:
@@ -9,6 +9,16 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: book_shop
+      MYSQL_DATABASE: book_shop
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping"]
 
   myerl:
     build:
@@ -19,12 +29,5 @@ services:
     labels:
       - "traefik.http.routers.myerl.rule=Host(`myerl.docker.localhost`)"
     depends_on:
-      - mysql
-
-  mysql:
-    image: mysql:5.7
-    environment:
-      MYSQL_ROOT_PASSWORD: book_shop
-      MYSQL_DATABASE: book_shop
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      db:
+        condition: service_healthy
