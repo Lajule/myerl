@@ -1,12 +1,12 @@
 myerl
 =====
 
-A MySQL/Erlang REST API skeleton.
+A MySQL/Erlang REST API skeleton built around :
 
-* [poolboy][1]: 
-* [mysql-otp][2]: 
-* [elli][3]: 
-* [hackney][4]: 
+* [poolboy][1] is used to implement a connexion pool.
+* [mysql-otp][2] is used as MySQL drive.
+* [elli][3] is used as web server.
+* [hackney][4] is used as HTTP client.
 
 Build
 -----

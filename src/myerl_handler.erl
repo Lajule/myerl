@@ -17,6 +17,8 @@ handle('GET', [<<"books">>], Req) ->
     myerl_books:books(Req);
 handle('GET', [<<"books">>, BookId], Req) ->
     myerl_books:book(BookId, Req);
+handle('PUT', [<<"books">>, BookId], Req) ->
+    myerl_books:update(BookId, Req);
 handle('DELETE', [<<"books">>, BookId], Req) ->
     myerl_books:delete(BookId, Req);
 handle(_, _, _Req) ->

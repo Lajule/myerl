@@ -5,7 +5,7 @@
 infos(_Req) ->
     Infos =
         #{uptime => element(1, erlang:statistics(wall_clock)),
-	  memory => erlang:memory(),
+          memory => erlang:memory(),
           run_queue => erlang:statistics(run_queue),
           logical_processors => erlang:system_info(logical_processors),
           logical_processors_online => erlang:system_info(logical_processors_online),

@@ -16,10 +16,12 @@ init(Args) ->
     {ok, Pid} = mysql:start_link(Args),
     {ok, #state{pid = Pid}}.
 
-handle_call({query, Stmt, Params}, _From, #state{pid = Pid} = State) ->
-    {reply, mysql:query(Pid, Stmt, Params), State};
-handle_call({transaction, Fun}, _From, #state{pid = Pid} = State) ->
-    {reply, mysql:transaction(Pid, Fun, [Pid], infinity), State};
+handle_call({query, Stmt, Params, FilterMap, Timeout},
+            _From,
+            #state{pid = Pid} = State) ->
+    {reply, mysql:query(Pid, Stmt, Params, FilterMap, Timeout), State};
+handle_call({transaction, Fun, Args, Retries}, _From, #state{pid = Pid} = State) ->
+    {reply, mysql:transaction(Pid, Fun, [Pid | Args], Retries), State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
