@@ -3,10 +3,10 @@ myerl
 
 A MySQL/Erlang REST API skeleton built around :
 
-* [poolboy][1] is used to implement a connexion pool.
-* [mysql-otp][2] is used as MySQL drive.
-* [elli][3] is used as web server.
-* [hackney][4] is used as HTTP client.
+* [poolboy][1]: used to implement a connexion pool
+* [mysql-otp][2]: used as MySQL driver
+* [elli][3]: used as web server
+* [hackney][4]: used as HTTP client
 
 Build
 -----
@@ -25,6 +25,8 @@ docker build -f docker/Dockerfile -t myerl .
 
 Config
 ------
+
+In `config/sys.config` file :
 
 ```
 [
@@ -57,21 +59,27 @@ To run the release :
 MYERL_DB_PASSWORD=book_shop ./_build/prod/rel/myerl/bin/myerl foreground
 ```
 
-Docker image :
+Docker container :
 
 ```sh
-MYERL_DB_PASSWORD=book_shop docker rm -d myerl
+MYERL_DB_PASSWORD=book_shop docker run -d myerl
 ```
 
-Docker Compose
---------------
+### Docker Compose :
+
+You can run multi-container Docker application with :
 
 ```sh
 docker-compose up -d --scale myerl=2
 ```
 
+Test it with :
+
 ```sh
-curl -H Host:myerl.docker.localhost http://127.0.0.1/books
+curl -H Host:myerl.docker.localhost -d '{"title":"The Hobbit","author":"J. R. R. Tolkien"}' http://localhost/books
+Created
+curl -H Host:myerl.docker.localhost http://localhost/books
+{"list":[{"author":"J. R. R. Tolkien","id":1,"title":"The Hobbit"}],"total":1}
 ```
 
 [1]: https://github.com/devinus/poolboy
