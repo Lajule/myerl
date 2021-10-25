@@ -6,8 +6,9 @@ create(Req) ->
     Book =
         jsx:decode(
             elli_request:body(Req)),
+
     Worker = poolboy:checkout(myerl_pool),
-    ok =
+    Result =
         gen_server:call(Worker,
                         {query,
                          <<"insert into books(title, author) values(?, ?)">>,
@@ -16,13 +17,20 @@ create(Req) ->
                          no_filtermap_fun,
                          default_timeout}),
     poolboy:checkin(pool, Worker),
-    {201, <<"Created">>}.
+
+    case Result of
+        ok ->
+            {201, <<"Created">>};
+        _ ->
+            {500, [], <<"Internal server error">>}
+    end.
 
 books(Req) ->
     Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
     Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
+
     Worker = poolboy:checkout(myerl_pool),
-    {atomic, Result} =
+    Result =
         gen_server:call(Worker,
                         {transaction,
                          fun(Pid) ->
@@ -38,11 +46,17 @@ books(Req) ->
                          [],
                          infinity}),
     poolboy:checkin(pool, Worker),
-    {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(Result)}.
+
+    case Result of
+        {atomic, ResultOfFun} ->
+            {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(ResultOfFun)};
+        {aborted, _} ->
+            {500, [], <<"Internal server error">>}
+    end.
 
 book(BookId, _Req) ->
     Worker = poolboy:checkout(myerl_pool),
-    {ok, ColumnNames, Rows} =
+    Result =
         gen_server:call(Worker,
                         {query,
                          <<"select id, title, author from books where id = ?">>,
@@ -50,21 +64,25 @@ book(BookId, _Req) ->
                          no_filtermap_fun,
                          default_timeout}),
     poolboy:checkin(pool, Worker),
-    case Rows of
-        [Row] ->
+
+    case Result of
+        {ok, ColumnNames, [Row]} ->
             {200,
              [{<<"Content-Type">>, <<"application/json">>}],
              jsx:encode(to_map(ColumnNames, Row, #{}))};
         [] ->
-            {404, <<"Not Found">>}
+            {404, <<"Not Found">>};
+        _ ->
+            {500, [], <<"Internal server error">>}
     end.
 
 update(BookId, Req) ->
     Book =
         jsx:decode(
             elli_request:body(Req)),
+
     Worker = poolboy:checkout(myerl_pool),
-    {atomic, AffectedRows} =
+    Result =
         gen_server:call(Worker,
                         {transaction,
                          fun(Pid) ->
@@ -79,16 +97,19 @@ update(BookId, Req) ->
                          [],
                          infinity}),
     poolboy:checkin(pool, Worker),
-    case AffectedRows of
-        1 ->
+
+    case Result of
+        {atomic, 1} ->
             {204, <<"No Content">>};
-        _ ->
-            {404, <<"Not Found">>}
+        {atomic, 0} ->
+            {404, <<"Not Found">>};
+        {aborted, _} ->
+            {500, [], <<"Internal server error">>}
     end.
 
 delete(BookId, _Req) ->
     Worker = poolboy:checkout(myerl_pool),
-    ok =
+    Result =
         gen_server:call(Worker,
                         {query,
                          <<"delete from books where id = ?">>,
@@ -96,7 +117,13 @@ delete(BookId, _Req) ->
                          no_filtermap_fun,
                          default_timeout}),
     poolboy:checkin(pool, Worker),
-    {204, <<"No Content">>}.
+
+    case Result of
+        ok ->
+            {204, <<"No Content">>};
+        _ ->
+            {500, [], <<"Internal server error">>}
+    end.
 
 to_map([ColumnName | ColumnNames], [Value | Values], Map) ->
     to_map(ColumnNames, Values, maps:put(ColumnName, Value, Map));
