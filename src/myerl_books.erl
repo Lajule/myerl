@@ -41,7 +41,7 @@ books(Req) ->
                                             <<"select id, title, author from books limit ?, ?">>,
                                             [Offset, Limit]),
                             #{total => Total,
-                              list => [to_map(ColumnNames, Row, #{}) || Row <- Rows]}
+                              list => [row_to_map(ColumnNames, Row, #{}) || Row <- Rows]}
                          end,
                          [],
                          infinity}),
@@ -69,7 +69,7 @@ book(BookId, _Req) ->
         {ok, ColumnNames, [Row]} ->
             {200,
              [{<<"Content-Type">>, <<"application/json">>}],
-             jsx:encode(to_map(ColumnNames, Row, #{}))};
+             jsx:encode(row_to_map(ColumnNames, Row, #{}))};
         {ok, _, []} ->
             {404, <<"Not Found">>};
         _ ->
@@ -125,7 +125,9 @@ delete(BookId, _Req) ->
             {500, [], <<"Internal server error">>}
     end.
 
-to_map([ColumnName | ColumnNames], [Value | Values], Map) ->
-    to_map(ColumnNames, Values, maps:put(ColumnName, Value, Map));
-to_map([], [], Map) ->
+% Private
+
+row_to_map([ColumnName | ColumnNames], [Value | Values], Map) ->
+    row_to_map(ColumnNames, Values, maps:put(ColumnName, Value, Map));
+row_to_map([], [], Map) ->
     Map.
