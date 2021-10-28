@@ -70,7 +70,7 @@ book(BookId, _Req) ->
             {200,
              [{<<"Content-Type">>, <<"application/json">>}],
              jsx:encode(to_map(ColumnNames, Row, #{}))};
-        [] ->
+        {ok, _, []} ->
             {404, <<"Not Found">>};
         _ ->
             {500, [], <<"Internal server error">>}
