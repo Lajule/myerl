@@ -1,6 +1,17 @@
 -module(myerl_books).
 
+%% api
 -export([create/1, books/1, book/2, update/2, delete/2]).
+
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-endif.
+
+%% ------------------------------------------------------------------
+%% api
+%% ------------------------------------------------------------------
 
 create(Req) ->
     Book =
@@ -125,9 +136,22 @@ delete(BookId, _Req) ->
             {500, [], <<"Internal server error">>}
     end.
 
-% Private
+%% ------------------------------------------------------------------
+%% private api
+%% ------------------------------------------------------------------
 
 row_to_map([ColumnName | ColumnNames], [Value | Values], Map) ->
     row_to_map(ColumnNames, Values, maps:put(ColumnName, Value, Map));
 row_to_map([], [], Map) ->
     Map.
+
+%% ------------------------------------------------------------------
+%% unit tests
+%% ------------------------------------------------------------------
+
+-ifdef(TEST).
+
+row_to_map_test_() ->
+    ?_assertEqual(#{foo => <<"bar">>}, row_to_map([foo], [<<"bar">>], #{})).
+
+-endif.
