@@ -1,7 +1,5 @@
 -module(myerl_logger).
 
--compile([{parse_transform, lager_transform}]).
-
 -export([handle/2, handle_event/3]).
 
 -behaviour(elli_handler).
