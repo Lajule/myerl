@@ -7,6 +7,7 @@ A MySQL/Erlang REST API skeleton built around :
 * [mysql-otp][2]: used as MySQL driver
 * [elli][3]: used as web server
 * [hackney][4]: used as HTTP client
+* [lager][5]: used for logging
 
 Build
 -----
@@ -88,3 +89,4 @@ curl -H Host:myerl.docker.localhost http://localhost/books
 [2]: https://github.com/mysql-otp/mysql-otp
 [3]: https://github.com/elli-lib/elli
 [4]: https://github.com/benoitc/hackney
+[5]: https://github.com/erlang-lager/lager
