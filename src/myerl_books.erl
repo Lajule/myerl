@@ -1,7 +1,8 @@
 -module(myerl_books).
 
 %% api
--export([create/1, books/1, book/2, update/2, delete/2]).
+-export([handle_create/1, handle_books/1, book/2, update/2, delete/2]).
+-export([create/2, books/2]).
 
 -ifdef(TEST).
 
@@ -13,52 +14,24 @@
 %% api
 %% ------------------------------------------------------------------
 
-create(Req) ->
+handle_create(Req) ->
     Book =
         jsx:decode(
             elli_request:body(Req)),
 
-    Worker = poolboy:checkout(myerl_pool),
-    Result =
-        gen_server:call(Worker,
-                        {query,
-                         <<"insert into books(title, author) values(?, ?)">>,
-                         [maps:get(<<"title">>, Book, <<"undefined">>),
-                          maps:get(<<"author">>, Book, <<"undefined">>)],
-                         no_filtermap_fun,
-                         default_timeout}),
-    poolboy:checkin(pool, Worker),
-
-    case Result of
+    case create(maps:get(<<"title">>, Book, <<"undefined">>),
+                maps:get(<<"author">>, Book, <<"undefined">>))
+    of
         ok ->
             {201, <<"Created">>};
         _ ->
             {500, [], <<"Internal server error">>}
     end.
 
-books(Req) ->
-    Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
-    Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
-
-    Worker = poolboy:checkout(myerl_pool),
-    Result =
-        gen_server:call(Worker,
-                        {transaction,
-                         fun(Pid) ->
-                            {ok, _, [[Total]]} =
-                                mysql:query(Pid, <<"select count(*) as total from books">>),
-                            {ok, ColumnNames, Rows} =
-                                mysql:query(Pid,
-                                            <<"select id, title, author from books limit ?, ?">>,
-                                            [Offset, Limit]),
-                            #{total => Total,
-                              list => [row_to_map(ColumnNames, Row, #{}) || Row <- Rows]}
-                         end,
-                         [],
-                         infinity}),
-    poolboy:checkin(pool, Worker),
-
-    case Result of
+handle_books(Req) ->
+    case books(elli_request:get_arg(<<"offset">>, Req, <<"0">>),
+               elli_request:get_arg(<<"limit">>, Req, <<"100">>))
+    of
         {atomic, ResultOfFun} ->
             {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(ResultOfFun)};
         {aborted, _} ->
@@ -135,6 +108,38 @@ delete(BookId, _Req) ->
         _ ->
             {500, [], <<"Internal server error">>}
     end.
+
+create(Title, Author) ->
+    Worker = poolboy:checkout(myerl_pool),
+    Result =
+        gen_server:call(Worker,
+                        {query,
+                         <<"insert into books(title, author) values(?, ?)">>,
+                         [Title, Author],
+                         no_filtermap_fun,
+                         default_timeout}),
+    poolboy:checkin(pool, Worker),
+    Result.
+
+books(Offset, Limit) ->
+    Worker = poolboy:checkout(myerl_pool),
+    Result =
+        gen_server:call(Worker,
+                        {transaction,
+                         fun(Pid) ->
+                            {ok, _, [[Total]]} =
+                                mysql:query(Pid, <<"select count(*) as total from books">>),
+                            {ok, ColumnNames, Rows} =
+                                mysql:query(Pid,
+                                            <<"select id, title, author from books limit ?, ?">>,
+                                            [Offset, Limit]),
+                            #{total => Total,
+                              list => [row_to_map(ColumnNames, Row, #{}) || Row <- Rows]}
+                         end,
+                         [],
+                         infinity}),
+    poolboy:checkin(pool, Worker),
+    Result.
 
 %% ------------------------------------------------------------------
 %% private api

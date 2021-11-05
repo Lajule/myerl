@@ -12,9 +12,9 @@ handle('GET', [<<"status">>], Req) ->
 handle('GET', [<<"ping">>], Req) ->
     myerl_status:ping(Req);
 handle('POST', [<<"books">>], Req) ->
-    myerl_books:create(Req);
+    myerl_books:handle_create(Req);
 handle('GET', [<<"books">>], Req) ->
-    myerl_books:books(Req);
+    myerl_books:handle_books(Req);
 handle('GET', [<<"books">>, BookId], Req) ->
     myerl_books:book(BookId, Req);
 handle('PUT', [<<"books">>, BookId], Req) ->
