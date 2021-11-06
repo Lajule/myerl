@@ -1,8 +1,9 @@
 -module(myerl_books).
 
 %% api
--export([handle_create/1, handle_books/1, book/2, update/2, delete/2]).
--export([create/2, books/2]).
+-export([create/2, books/2, book/1, update/3, delete/1]).
+
+-include_lib("kernel/include/logger.hrl").
 
 -ifdef(TEST).
 
@@ -14,57 +15,7 @@
 %% api
 %% ------------------------------------------------------------------
 
-handle_create(Req) ->
-    Book =
-        jsx:decode(
-            elli_request:body(Req)),
-
-    case create(maps:get(<<"title">>, Book, <<"undefined">>),
-                maps:get(<<"author">>, Book, <<"undefined">>))
-    of
-        ok ->
-            {201, <<"Created">>};
-        _ ->
-            {500, [], <<"Internal server error">>}
-    end.
-
-handle_books(Req) ->
-    case books(elli_request:get_arg(<<"offset">>, Req, <<"0">>),
-               elli_request:get_arg(<<"limit">>, Req, <<"100">>))
-    of
-        {atomic, ResultOfFun} ->
-            {200, [{<<"Content-Type">>, <<"application/json">>}], jsx:encode(ResultOfFun)};
-        {aborted, _} ->
-            {500, [], <<"Internal server error">>}
-    end.
-
-book(BookId, _Req) ->
-    Worker = poolboy:checkout(myerl_pool),
-    Result =
-        gen_server:call(Worker,
-                        {query,
-                         <<"select id, title, author from books where id = ?">>,
-                         [BookId],
-                         no_filtermap_fun,
-                         default_timeout}),
-    poolboy:checkin(pool, Worker),
-
-    case Result of
-        {ok, ColumnNames, [Row]} ->
-            {200,
-             [{<<"Content-Type">>, <<"application/json">>}],
-             jsx:encode(row_to_map(ColumnNames, Row, #{}))};
-        {ok, _, []} ->
-            {404, <<"Not Found">>};
-        _ ->
-            {500, [], <<"Internal server error">>}
-    end.
-
-update(BookId, Req) ->
-    Book =
-        jsx:decode(
-            elli_request:body(Req)),
-
+create(Title, Author) ->
     Worker = poolboy:checkout(myerl_pool),
     Result =
         gen_server:call(Worker,
@@ -72,54 +23,20 @@ update(BookId, Req) ->
                          fun(Pid) ->
                             ok =
                                 mysql:query(Pid,
-                                            "update books set title = ?, author = ? where id = ?",
-                                            [maps:get(<<"title">>, Book, <<"undefined">>),
-                                             maps:get(<<"author">>, Book, <<"undefined">>),
-                                             BookId]),
-                            mysql:affected_rows(Pid)
+                                            <<"insert into books(title, author) values(?, ?)">>,
+                                            [Title, Author]),
+                            mysql:insert_id(Pid)
                          end,
                          [],
                          infinity}),
     poolboy:checkin(pool, Worker),
-
     case Result of
-        {atomic, 1} ->
-            {204, <<"No Content">>};
-        {atomic, 0} ->
-            {404, <<"Not Found">>};
-        {aborted, _} ->
-            {500, [], <<"Internal server error">>}
+        {atomic, Id} ->
+            #{id => Id};
+        {aborted, Reason} ->
+            ?LOG_ERROR("error happened because: ~p", [Reason]),
+            throw(db_error)
     end.
-
-delete(BookId, _Req) ->
-    Worker = poolboy:checkout(myerl_pool),
-    Result =
-        gen_server:call(Worker,
-                        {query,
-                         <<"delete from books where id = ?">>,
-                         [BookId],
-                         no_filtermap_fun,
-                         default_timeout}),
-    poolboy:checkin(pool, Worker),
-
-    case Result of
-        ok ->
-            {204, <<"No Content">>};
-        _ ->
-            {500, [], <<"Internal server error">>}
-    end.
-
-create(Title, Author) ->
-    Worker = poolboy:checkout(myerl_pool),
-    Result =
-        gen_server:call(Worker,
-                        {query,
-                         <<"insert into books(title, author) values(?, ?)">>,
-                         [Title, Author],
-                         no_filtermap_fun,
-                         default_timeout}),
-    poolboy:checkin(pool, Worker),
-    Result.
 
 books(Offset, Limit) ->
     Worker = poolboy:checkout(myerl_pool),
@@ -139,7 +56,80 @@ books(Offset, Limit) ->
                          [],
                          infinity}),
     poolboy:checkin(pool, Worker),
-    Result.
+    case Result of
+        {atomic, ResultOfFun} ->
+            ResultOfFun;
+        {aborted, Reason} ->
+            ?LOG_ERROR("error happened because: ~p", [Reason]),
+            throw(db_error)
+    end.
+
+book(BookId) ->
+    Worker = poolboy:checkout(myerl_pool),
+    Result =
+        gen_server:call(Worker,
+                        {query,
+                         <<"select id, title, author from books where id = ?">>,
+                         [BookId],
+                         no_filtermap_fun,
+                         default_timeout}),
+    poolboy:checkin(pool, Worker),
+    case Result of
+        {ok, ColumnNames, [Row]} ->
+            row_to_map(ColumnNames, Row, #{});
+        {ok, _, []} ->
+            no_row;
+        {error, Reason} ->
+            ?LOG_ERROR("error happened because: ~p", [Reason]),
+            throw(db_error)
+    end.
+
+update(BookId, Title, Author) ->
+    Worker = poolboy:checkout(myerl_pool),
+    Result =
+        gen_server:call(Worker,
+                        {transaction,
+                         fun(Pid) ->
+                            ok =
+                                mysql:query(Pid,
+                                            "update books set title = ?, author = ? where id = ?",
+                                            [Title, Author, BookId]),
+                            mysql:affected_rows(Pid)
+                         end,
+                         [],
+                         infinity}),
+    poolboy:checkin(pool, Worker),
+    case Result of
+        {atomic, 1} ->
+            ok;
+        {atomic, 0} ->
+            no_row;
+        {aborted, Reason} ->
+            ?LOG_ERROR("error happened because: ~p", [Reason]),
+            throw(db_error)
+    end.
+
+delete(BookId) ->
+    Worker = poolboy:checkout(myerl_pool),
+    Result =
+        gen_server:call(Worker,
+                        {transaction,
+                         fun(Pid) ->
+                            ok = mysql:query(Pid, "delete from books where id = ?", [BookId]),
+                            mysql:affected_rows(Pid)
+                         end,
+                         [],
+                         infinity}),
+    poolboy:checkin(pool, Worker),
+    case Result of
+        {atomic, 1} ->
+            ok;
+        {atomic, 0} ->
+            no_row;
+        {aborted, Reason} ->
+            ?LOG_ERROR("error happened because: ~p", [Reason]),
+            throw(db_error)
+    end.
 
 %% ------------------------------------------------------------------
 %% private api

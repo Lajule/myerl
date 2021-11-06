@@ -18,7 +18,7 @@ init([]) ->
                            application:get_all_env(mysql)
                            ++ [{password, os:getenv("MYERL_DB_PASSWORD", "")}]),
     CallbackArgs =
-        [{mods, [{elli_middleware_compress, []}, {myerl_logger, []}, {myerl_handler, []}]}],
+        [{mods, [{elli_middleware_compress, []}, {myerl_logger, []}, {myerl_router, []}]}],
     ElliSpec =
         #{id => myerl_http,
           start =>
