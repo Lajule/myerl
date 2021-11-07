@@ -7,6 +7,12 @@
 
 -define(CONTENT_TYPE, {<<"Content-Type">>, <<"application/json">>}).
 
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-endif.
+
 %% ------------------------------------------------------------------
 %% api
 %% ------------------------------------------------------------------
@@ -78,3 +84,17 @@ respond(Result) ->
         no_row ->
             {404, [], <<"Not Found">>}
     end.
+
+%% ------------------------------------------------------------------
+%% unit tests
+%% ------------------------------------------------------------------
+
+-ifdef(TEST).
+
+response_test_() ->
+    [?_assertEqual({ok, [], <<"OK">>}, respond(ok)),
+     ?_assertEqual({ok, [?CONTENT_TYPE], jsx:encode(#{foo => <<"bar">>})},
+                   respond({ok, #{foo => <<"bar">>}})),
+     ?_assertEqual({404, [], <<"Not Found">>}, respond(no_row))].
+
+-endif.

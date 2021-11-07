@@ -32,7 +32,7 @@ create(Title, Author) ->
     poolboy:checkin(pool, Worker),
     case Result of
         {atomic, Id} ->
-            NewBook = #{id => Id},
+            NewBook = #{<<"id">> => Id},
             {ok, NewBook};
         {aborted, Reason} ->
             ?LOG_ERROR("error happened because: ~p", [Reason]),
