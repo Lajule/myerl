@@ -24,7 +24,4 @@ COPY --from=0 /app/_build/prod/rel/myerl /myerl
 # Expose relevant ports
 EXPOSE 3000
 
-# Enviroment variables replacement
-ENV RELX_REPLACE_OS_VARS=true
-
 CMD ["/myerl/bin/myerl", "foreground"]

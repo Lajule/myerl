@@ -1,69 +1,80 @@
 -module(myerl_router).
 
--export([handle/2, handle_event/3]).
-
 -behaviour(elli_handler).
 
+%% api
+-export([handle/2, handle_event/3]).
+
 -define(CONTENT_TYPE, {<<"Content-Type">>, <<"application/json">>}).
+
+%% ------------------------------------------------------------------
+%% api
+%% ------------------------------------------------------------------
 
 handle(Req, _Args) ->
     handle(elli_request:method(Req), elli_request:path(Req), Req).
 
+handle_event(_Event, _Data, _Args) ->
+    ok.
+
+%% ------------------------------------------------------------------
+%% private api
+%% ------------------------------------------------------------------
+
 handle('GET', [<<"ping">>], _Req) ->
     {ok, [], <<"pong">>};
 handle('GET', [<<"status">>], _Req) ->
-    {ok,
-     [?CONTENT_TYPE],
-     jsx:encode(
-         myerl_status:infos())};
+    Infos = infos(),
+    {ok, [?CONTENT_TYPE], jsx:encode(Infos)};
 handle('POST', [<<"books">>], Req) ->
-    Book =
-        jsx:decode(
-            elli_request:body(Req)),
+    Body = elli_request:body(Req),
+    Book = jsx:decode(Body),
     Title = maps:get(<<"title">>, Book, <<"undefined">>),
     Author = maps:get(<<"author">>, Book, <<"undefined">>),
-    {ok,
-     [?CONTENT_TYPE],
-     jsx:encode(
-         myerl_books:create(Title, Author))};
+    Result = myerl_books:create(Title, Author),
+    respond(Result);
 handle('GET', [<<"books">>], Req) ->
     Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
     Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
-    {ok,
-     [?CONTENT_TYPE],
-     jsx:encode(
-         myerl_books:create(Offset, Limit))};
+    Result = myerl_books:books(Offset, Limit),
+    respond(Result);
 handle('GET', [<<"books">>, BookId], _Req) ->
     Result = myerl_books:book(BookId),
-    case Result of
-        no_row ->
-            {404, [], <<"Not Found">>};
-        Map ->
-            {ok, [?CONTENT_TYPE], jsx:encode(Map)}
-    end;
+    respond(Result);
 handle('PUT', [<<"books">>, BookId], Req) ->
-    Book =
-        jsx:decode(
-            elli_request:body(Req)),
+    Body = elli_request:body(Req),
+    Book = jsx:decode(Body),
     Title = maps:get(<<"title">>, Book, <<"undefined">>),
     Author = maps:get(<<"author">>, Book, <<"undefined">>),
     Result = myerl_books:update(BookId, Title, Author),
-    case Result of
-        ok ->
-            {ok, [], <<"OK">>};
-        no_row ->
-            {404, [], <<"Not Found">>}
-    end;
+    respond(Result);
 handle('DELETE', [<<"books">>, BookId], _Req) ->
     Result = myerl_books:delete(BookId),
-    case Result of
-        ok ->
-            {ok, [], <<"OK">>};
-        no_row ->
-            {404, [], <<"Not Found">>}
-    end;
+    respond(Result);
 handle(_, _, _Req) ->
     {404, [], <<"Not Found">>}.
 
-handle_event(_Event, _Data, _Args) ->
-    ok.
+infos() ->
+    #{uptime => element(1, erlang:statistics(wall_clock)),
+      memory => erlang:memory(),
+      run_queue => erlang:statistics(run_queue),
+      logical_processors => erlang:system_info(logical_processors),
+      logical_processors_online => erlang:system_info(logical_processors_online),
+      logical_processors_available => erlang:system_info(logical_processors_available),
+      schedulers => erlang:system_info(schedulers),
+      otp_release => erlang:system_info(otp_release),
+      version => erlang:system_info(version),
+      system_architecture => erlang:system_info(system_architecture),
+      threads => erlang:system_info(threads),
+      thread_pool_size => erlang:system_info(thread_pool_size),
+      process_count => erlang:system_info(process_count)}.
+
+respond(Result) ->
+    case Result of
+        ok ->
+            {ok, [], <<"OK">>};
+        {ok, Content} ->
+            {ok, [?CONTENT_TYPE], jsx:encode(Content)};
+        no_row ->
+            {404, [], <<"Not Found">>}
+    end.

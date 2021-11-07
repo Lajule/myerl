@@ -32,7 +32,8 @@ create(Title, Author) ->
     poolboy:checkin(pool, Worker),
     case Result of
         {atomic, Id} ->
-            #{id => Id};
+            NewBook = #{id => Id},
+            {ok, NewBook};
         {aborted, Reason} ->
             ?LOG_ERROR("error happened because: ~p", [Reason]),
             throw(db_error)
@@ -57,8 +58,8 @@ books(Offset, Limit) ->
                          infinity}),
     poolboy:checkin(pool, Worker),
     case Result of
-        {atomic, ResultOfFun} ->
-            ResultOfFun;
+        {atomic, BookList} ->
+            {ok, BookList};
         {aborted, Reason} ->
             ?LOG_ERROR("error happened because: ~p", [Reason]),
             throw(db_error)
@@ -76,7 +77,8 @@ book(BookId) ->
     poolboy:checkin(pool, Worker),
     case Result of
         {ok, ColumnNames, [Row]} ->
-            row_to_map(ColumnNames, Row, #{});
+            Book = row_to_map(ColumnNames, Row, #{}),
+            {ok, Book};
         {ok, _, []} ->
             no_row;
         {error, Reason} ->

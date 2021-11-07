@@ -1,10 +1,15 @@
 -module(myerl_logger).
 
--export([handle/2, handle_event/3]).
-
 -behaviour(elli_handler).
 
+%% api
+-export([handle/2, handle_event/3]).
+
 -include_lib("kernel/include/logger.hrl").
+
+%% ------------------------------------------------------------------
+%% api
+%% ------------------------------------------------------------------
 
 handle(_Req, _Args) ->
     ignore.
