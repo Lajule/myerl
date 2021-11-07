@@ -35,10 +35,13 @@ handle('GET', [<<"status">>], _Req) ->
 handle('POST', [<<"books">>], Req) ->
     Body = elli_request:body(Req),
     Book = jsx:decode(Body),
-    Title = maps:get(<<"title">>, Book, <<"undefined">>),
-    Author = maps:get(<<"author">>, Book, <<"undefined">>),
-    Result = myerl_books:create(Title, Author),
-    response(Result);
+    case Book of
+        #{<<"title">> := Title, <<"author">> := Author} ->
+            Result = myerl_books:create(Title, Author),
+            response(Result);
+        _ ->
+            {400, [], <<"Bad Request">>}
+    end;
 handle('GET', [<<"books">>], Req) ->
     Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
     Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
@@ -50,10 +53,13 @@ handle('GET', [<<"books">>, BookId], _Req) ->
 handle('PUT', [<<"books">>, BookId], Req) ->
     Body = elli_request:body(Req),
     Book = jsx:decode(Body),
-    Title = maps:get(<<"title">>, Book, <<"undefined">>),
-    Author = maps:get(<<"author">>, Book, <<"undefined">>),
-    Result = myerl_books:update(BookId, Title, Author),
-    response(Result);
+    case Book of
+        #{<<"title">> := Title, <<"author">> := Author} ->
+            Result = myerl_books:update(BookId, Title, Author),
+            response(Result);
+        _ ->
+            {400, [], <<"Bad Request">>}
+    end;
 handle('DELETE', [<<"books">>, BookId], _Req) ->
     Result = myerl_books:delete(BookId),
     response(Result);
