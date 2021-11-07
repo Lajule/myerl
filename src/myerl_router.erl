@@ -38,25 +38,25 @@ handle('POST', [<<"books">>], Req) ->
     Title = maps:get(<<"title">>, Book, <<"undefined">>),
     Author = maps:get(<<"author">>, Book, <<"undefined">>),
     Result = myerl_books:create(Title, Author),
-    respond(Result);
+    response(Result);
 handle('GET', [<<"books">>], Req) ->
     Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
     Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
     Result = myerl_books:books(Offset, Limit),
-    respond(Result);
+    response(Result);
 handle('GET', [<<"books">>, BookId], _Req) ->
     Result = myerl_books:book(BookId),
-    respond(Result);
+    response(Result);
 handle('PUT', [<<"books">>, BookId], Req) ->
     Body = elli_request:body(Req),
     Book = jsx:decode(Body),
     Title = maps:get(<<"title">>, Book, <<"undefined">>),
     Author = maps:get(<<"author">>, Book, <<"undefined">>),
     Result = myerl_books:update(BookId, Title, Author),
-    respond(Result);
+    response(Result);
 handle('DELETE', [<<"books">>, BookId], _Req) ->
     Result = myerl_books:delete(BookId),
-    respond(Result);
+    response(Result);
 handle(_, _, _Req) ->
     {404, [], <<"Not Found">>}.
 
@@ -75,7 +75,7 @@ infos() ->
       thread_pool_size => erlang:system_info(thread_pool_size),
       process_count => erlang:system_info(process_count)}.
 
-respond(Result) ->
+response(Result) ->
     case Result of
         ok ->
             {ok, [], <<"OK">>};
@@ -92,9 +92,9 @@ respond(Result) ->
 -ifdef(TEST).
 
 response_test_() ->
-    [?_assertEqual({ok, [], <<"OK">>}, respond(ok)),
+    [?_assertEqual({ok, [], <<"OK">>}, response(ok)),
      ?_assertEqual({ok, [?CONTENT_TYPE], jsx:encode(#{foo => <<"bar">>})},
-                   respond({ok, #{foo => <<"bar">>}})),
-     ?_assertEqual({404, [], <<"Not Found">>}, respond(no_row))].
+                   response({ok, #{foo => <<"bar">>}})),
+     ?_assertEqual({404, [], <<"Not Found">>}, response(no_row))].
 
 -endif.
