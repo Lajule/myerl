@@ -93,8 +93,8 @@ response(Result) ->
 
 response_test_() ->
     [?_assertEqual({ok, [], <<"OK">>}, response(ok)),
-     ?_assertEqual({ok, [?CONTENT_TYPE], jsx:encode(#{foo => <<"bar">>})},
-                   response({ok, #{foo => <<"bar">>}})),
+     ?_assertEqual({ok, [?CONTENT_TYPE], jsx:encode(#{<<"foo">> => <<"bar">>})},
+                   response({ok, #{<<"foo">> => <<"bar">>}})),
      ?_assertEqual({404, [], <<"Not Found">>}, response(no_row))].
 
 -endif.
