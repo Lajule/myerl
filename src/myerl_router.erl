@@ -43,9 +43,10 @@ handle('POST', [<<"books">>], Req) ->
             {400, [], <<"Bad Request">>}
     end;
 handle('GET', [<<"books">>], Req) ->
+    Search = elli_request:get_arg(<<"search">>, Req),
     Offset = elli_request:get_arg(<<"offset">>, Req, <<"0">>),
     Limit = elli_request:get_arg(<<"limit">>, Req, <<"100">>),
-    Result = myerl_books:books(Offset, Limit),
+    Result = myerl_books:books(Search, Offset, Limit),
     response(Result);
 handle('GET', [<<"books">>, BookId], _Req) ->
     Result = myerl_books:book(BookId),

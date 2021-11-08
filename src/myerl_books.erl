@@ -1,7 +1,7 @@
 -module(myerl_books).
 
 %% api
--export([create/2, books/2, book/1, update/3, delete/1]).
+-export([create/2, books/3, book/1, update/3, delete/1]).
 
 -include_lib("kernel/include/logger.hrl").
 
@@ -39,31 +39,14 @@ create(Title, Author) ->
             throw(db_error)
     end.
 
-books(Offset, Limit) ->
-    Worker = poolboy:checkout(myerl_pool),
-    Result =
-        gen_server:call(Worker,
-                        {transaction,
-                         fun(Pid) ->
-                            {ok, _, [[Total]]} =
-                                mysql:query(Pid, <<"select count(*) as total from books">>),
-                            {ok, ColumnNames, Rows} =
-                                mysql:query(Pid,
-                                            <<"select id, title, author from books limit ?, ?">>,
-                                            [Offset, Limit]),
-                            #{total => Total,
-                              list => [row_to_map(ColumnNames, Row, #{}) || Row <- Rows]}
-                         end,
-                         [],
-                         infinity}),
-    poolboy:checkin(pool, Worker),
-    case Result of
-        {atomic, BookList} ->
-            {ok, BookList};
-        {aborted, Reason} ->
-            ?LOG_ERROR("error happened because: ~p", [Reason]),
-            throw(db_error)
-    end.
+books(undefined, Offset, Limit) ->
+    books_query({<<"select count(*) as total from books">>, []},
+                {<<"select id, title, author from books limit ?, ?">>, [Offset, Limit]});
+books(Search, Offset, Limit) ->
+    books_query({<<"select count(*) as total from books where match(title, author) against(? in boolean mode)">>,
+                 [Search]},
+                {<<"select id, title, author from books where match(title, author) against(? in boolean mode) limit ?, ?">>,
+                 [Search, Offset, Limit]}).
 
 book(BookId) ->
     Worker = poolboy:checkout(myerl_pool),
@@ -136,6 +119,28 @@ delete(BookId) ->
 %% ------------------------------------------------------------------
 %% private api
 %% ------------------------------------------------------------------
+
+books_query({CountQuery, CountArgs}, {SelectQuery, SelectArgs}) ->
+    Worker = poolboy:checkout(myerl_pool),
+    Result =
+        gen_server:call(Worker,
+                        {transaction,
+                         fun(Pid) ->
+                            {ok, _, [[Total]]} = mysql:query(Pid, CountQuery, CountArgs),
+                            {ok, ColumnNames, Rows} = mysql:query(Pid, SelectQuery, SelectArgs),
+                            BookList = [row_to_map(ColumnNames, Row, #{}) || Row <- Rows],
+                            #{total => Total, list => BookList}
+                         end,
+                         [],
+                         infinity}),
+    poolboy:checkin(pool, Worker),
+    case Result of
+        {atomic, BookList} ->
+            {ok, BookList};
+        {aborted, Reason} ->
+            ?LOG_ERROR("error happened because: ~p", [Reason]),
+            throw(db_error)
+    end.
 
 row_to_map([ColumnName | ColumnNames], [Value | Values], Map) ->
     row_to_map(ColumnNames, Values, maps:put(ColumnName, Value, Map));
