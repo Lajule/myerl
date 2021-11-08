@@ -23,7 +23,7 @@ create(Title, Author) ->
                          fun(Pid) ->
                             ok =
                                 mysql:query(Pid,
-                                            <<"insert into books(title, author) values(?, ?)">>,
+                                            <<"INSERT INTO books(title, author) VALUES(?, ?)">>,
                                             [Title, Author]),
                             mysql:insert_id(Pid)
                          end,
@@ -40,15 +40,15 @@ create(Title, Author) ->
     end.
 
 books(undefined, Offset, Limit) ->
-    books_query({<<"select count(*) as total from books">>, []},
-                {<<"select id, title, author from books limit ?, ?">>, [Offset, Limit]});
+    books_query({<<"SELECT COUNT(*) AS total FROM books">>, []},
+                {<<"SELECT id, title, author FROM books LIMIT ?, ?">>, [Offset, Limit]});
 books(Search, Offset, Limit) ->
-    books_query({<<"select count(*) as total from books "
-                   "where match(title, author) against(? in boolean mode)">>,
+    books_query({<<"SELECT COUNT(*) AS total FROM books "
+                   "WHERE MATCH(title, author) AGAINST(? IN BOOLEAN MODE)">>,
                  [Search]},
-                {<<"select id, title, author from books "
-                   "where match(title, author) against(? in boolean mode) "
-                   "limit ?, ?">>,
+                {<<"SELECT id, title, author FROM books "
+                   "WHERE MATCH(title, author) AGAINST(? IN BOOLEAN MODE) "
+                   "LIMIT ?, ?">>,
                  [Search, Offset, Limit]}).
 
 book(BookId) ->
@@ -56,7 +56,7 @@ book(BookId) ->
     Result =
         gen_server:call(Worker,
                         {query,
-                         <<"select id, title, author from books where id = ?">>,
+                         <<"SELECT id, title, author FROM books WHERE id = ?">>,
                          [BookId],
                          no_filtermap_fun,
                          default_timeout}),
@@ -80,7 +80,7 @@ update(BookId, Title, Author) ->
                          fun(Pid) ->
                             ok =
                                 mysql:query(Pid,
-                                            "update books set title = ?, author = ? where id = ?",
+                                            "UPDATE books SET title = ?, author = ? WHERE id = ?",
                                             [Title, Author, BookId]),
                             mysql:affected_rows(Pid)
                          end,
@@ -103,7 +103,7 @@ delete(BookId) ->
         gen_server:call(Worker,
                         {transaction,
                          fun(Pid) ->
-                            ok = mysql:query(Pid, "delete from books where id = ?", [BookId]),
+                            ok = mysql:query(Pid, "DELETE FROM books WHERE id = ?", [BookId]),
                             mysql:affected_rows(Pid)
                          end,
                          [],

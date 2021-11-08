@@ -24,6 +24,15 @@ Docker image :
 docker build -f docker/Dockerfile -t myerl .
 ```
 
+Test
+----
+
+Run tests with :
+
+```sh
+rebar3 eunit ct
+```
+
 Config
 ------
 
