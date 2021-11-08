@@ -43,9 +43,12 @@ books(undefined, Offset, Limit) ->
     books_query({<<"select count(*) as total from books">>, []},
                 {<<"select id, title, author from books limit ?, ?">>, [Offset, Limit]});
 books(Search, Offset, Limit) ->
-    books_query({<<"select count(*) as total from books where match(title, author) against(? in boolean mode)">>,
+    books_query({<<"select count(*) as total from books "
+                   "where match(title, author) against(? in boolean mode)">>,
                  [Search]},
-                {<<"select id, title, author from books where match(title, author) against(? in boolean mode) limit ?, ?">>,
+                {<<"select id, title, author from books "
+                   "where match(title, author) against(? in boolean mode) "
+                   "limit ?, ?">>,
                  [Search, Offset, Limit]}).
 
 book(BookId) ->

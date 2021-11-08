@@ -27,7 +27,7 @@ docker build -f docker/Dockerfile -t myerl .
 Config
 ------
 
-In `config/sys.config` file :
+In `config/sys.config.src` file :
 
 ```
 [
