@@ -39,25 +39,15 @@ Config
 In `config/sys.config.src` file :
 
 ```
-[
-  {kernel, [
-    {logger_level, info}
-  ]},
-  {elli, [
-    {min_acceptors, 20},
-    {port, 3000}
-  ]},
-  {mysql, [
-    {host, "db"},
-    {user, "root"},
-    {database, "book_shop"},
-    {port, 3306}
-  ]},
-  {poolboy, [
-    {size, 5},
-    {max_overflow, 10}
-  ]}
-].
+[{kernel, [{logger_level, info}]},
+ {elli, [{min_acceptors, 20}, {port, 3000}]},
+ {mysql,
+  [{host, "db"},
+   {user, "root"},
+   {password, "${MYERL_DB_PASSWORD}"},
+   {database, "book_shop"},
+   {port, 3306}]},
+ {poolboy, [{size, 5}, {max_overflow, 10}]}].
 ```
 
 Run
