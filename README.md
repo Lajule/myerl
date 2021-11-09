@@ -33,6 +33,8 @@ Run tests with :
 rebar3 eunit ct
 ```
 
+> In order to run Common Test you need a database, you have to configure connexion in `test/test.config` file.
+
 Config
 ------
 
