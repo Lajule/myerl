@@ -78,12 +78,21 @@ docker-compose up -d --scale myerl=2
 Test it with :
 
 ```sh
-curl -H Host:myerl.docker.localhost http://localhost/status 
-{"logical_processors":4,"logical_processors_available":4,"logical_processors_online":4,"memory":{"total":45672256,"processes":5735112,"processes_used":5735112,"system":39937144,"atom":671969,"atom_used":645673,"binary":863080,"code":18150646,"ets":616496},"otp_release":[50,52],"process_count":114,"run_queue":0,"schedulers":4,"system_architecture":[120,56,54,95,54,52,45,112,99,45,108,105,110,117,120,45,109,117,115,108],"thread_pool_size":1,"threads":true,"uptime":123287,"version":[49,50,46,49,46,50]}
-curl -H Host:myerl.docker.localhost -d '{"title":"The Hobbit","author":"J. R. R. Tolkien"}' http://localhost/books
-{"id":1}
-curl -H Host:myerl.docker.localhost http://localhost/books
-{"list":[{"author":"J. R. R. Tolkien","id":1,"title":"The Hobbit"}],"total":1}
+curl -s -H Host:myerl.docker.localhost -d '{"title":"The Hobbit","author":"J. R. R. Tolkien"}' http://localhost/books | jq
+{
+  "id": 10
+}
+curl -s -H Host:myerl.docker.localhost http://localhost/books | jq 
+{
+  "list": [
+    {
+      "author": "J. R. R. Tolkien",
+      "id": 1,
+      "title": "The Hobbit"
+    }
+  ],
+  "total": 1
+}
 ```
 
 [1]: https://github.com/devinus/poolboy

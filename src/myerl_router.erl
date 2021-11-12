@@ -98,6 +98,9 @@ response(Result) ->
 
 -ifdef(TEST).
 
+infos_test_() ->
+    ?_assertMatch(#{}, infos()).
+
 response_test_() ->
     [?_assertEqual({ok, [], <<"OK">>}, response(ok)),
      ?_assertEqual({ok, [?CONTENT_TYPE], jsx:encode(#{<<"foo">> => <<"bar">>})},
